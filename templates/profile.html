@@ -1,11 +1,55 @@
 {% extends "base.html" %}
-{% block title %}프로필{% endblock %}
+{% block title %}프로필 관리{% endblock %}
+{% block head %}
+<style>
+  .profile-card { margin:2rem 0; border:1px solid #ddd; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+  .profile-card .card-body { padding:1.5rem; }
+  .form-group { margin-bottom:1rem; }
+  .form-group label { font-weight:500; margin-bottom:0.5rem; display:block; }
+  /* 비밀번호 변경 섹션 숨김/표시 */
+  #pwd-section { display: none; margin-top:1rem; }
+</style>
+<script>
+  function togglePwdSection() {
+    const sec = document.getElementById('pwd-section');
+    sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+  }
+</script>
+{% endblock %}
 {% block content %}
-<h2>프로필 관리</h2>
-<p>사용자명: {{ user.username }}</p>
-<form method="post">
-  소개글: <br>
-  <textarea name="bio" rows="4" cols="50">{{ user.bio or '' }}</textarea><br>
-  <button type="submit">프로필 업데이트</button>
-</form>
+<div class="profile-card">
+  <div class="card-body">
+    <h3>프로필 관리</h3>
+    <form method="POST" action="{{ url_for('profile') }}">
+      <div class="form-group">
+        <label>소개글:</label>
+        <textarea name="bio">{{ current_user.bio or '' }}</textarea>
+      </div>
+      <button type="submit">프로필 업데이트</button>
+    </form>
+
+    <!-- 비밀번호 변경 토글 버튼 -->
+    <button type="button" onclick="togglePwdSection()">비밀번호 변경하기</button>
+
+    <!-- 숨겨진 비밀번호 변경 섹션 -->
+    <div id="pwd-section">
+      <h3>비밀번호 변경</h3>
+      <form method="POST" action="{{ url_for('change_password') }}">
+        <div class="form-group">
+          <label>현재 비밀번호</label>
+          <input type="password" name="old_password" required>
+        </div>
+        <div class="form-group">
+          <label>새 비밀번호</label>
+          <input type="password" name="new_password" required>
+        </div>
+        <div class="form-group">
+          <label>새 비밀번호 확인</label>
+          <input type="password" name="confirm_password" required>
+        </div>
+        <button type="submit">비밀번호 변경</button>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}

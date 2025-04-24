@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}1:1 채팅 – {{ other_username }}{% endblock %}
+
+{% block head %}
+<style>
+  #notification {
+    background: #fffae6;
+    border: 1px solid #ffd54f;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  #notification button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  #messages {
+    height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    padding: 10px;
+    border-radius: 4px;
+    background: #fafafa;
+    margin-bottom: 10px;
+  }
+  /* 입력창과 버튼을 가로 배치 */
+  #chat-form { display: flex; gap: 10px; margin-bottom: 10px; }
+  #msg-input { flex: 1; }
+  #chat-form button { flex: 0 0 auto; width: 80px; }
+  .leave-btn { background-color: #e74c3c; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+  .leave-btn:hover { background-color: #c0392b; }
+</style>
+<script>
+  var socket;
+  document.addEventListener('DOMContentLoaded', function() {
+    socket = io();
+    socket.emit('join', {room: '{{ room }}'});
+    // 과거 대화 렌더링
+    {% for m in history %}
+      addMessage("{{ m.sender_name }}: {{ m.msg }}");
+    {% endfor %}
+    // 새 메시지 수신 (서버 send uses default 'message' event)
+    socket.on('message', function(data) {
+      addMessage(data.from_name + ': ' + data.msg);
+    });
+  });
+
+  function addMessage(text) {
+    var msgBox = document.getElementById('messages');
+    var entry = document.createElement('div');
+    entry.textContent = text;
+    msgBox.appendChild(entry);
+    msgBox.scrollTop = msgBox.scrollHeight;
+  }
+
+  function sendMessage() {
+    var input = document.getElementById('msg-input');
+    var msg = input.value.trim();
+    if (!msg) return;
+    socket.emit('private_message', {room: '{{ room }}', from: '{{ current_user.id }}', from_name: '{{ current_user.username }}', msg: msg});
+    input.value = '';
+  }
+
+  function leaveChat() {
+    fetch('{{ url_for("leave_chat", room_id=room) }}', {method: 'POST', credentials: 'same-origin'})
+      .then(function() { window.location.href = '{{ url_for("chat_list") }}'; });
+  }
+
+  function dismissNotification() {
+    document.getElementById('notification').style.display = 'none';
+  }
+</script>
+{% endblock %}
+
+{% block content %}
+<div id="notification"><span></span><button onclick="dismissNotification()">×</button></div>
+<h2>1:1 채팅 – {{ other_username }}</h2>
+<div id="messages"></div>
+<form id="chat-form" onsubmit="sendMessage(); return false;">
+  <input id="msg-input" autocomplete="off" placeholder="메시지를 입력하세요" />
+  <button type="submit">전송</button>
+</form>
+<button class="leave-btn" onclick="leaveChat()">대화 나가기</button>
+{% endblock %}

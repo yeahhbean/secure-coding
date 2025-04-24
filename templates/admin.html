@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}관리자 페이지{% endblock %}
+
+{% block head %}
+<style>
+/* 카드 컨테이너 */
+.user-list-card { margin: 2rem 0; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+.user-list-card .card-body { padding: 1.5rem; }
+
+/* 토글용 제목 버튼 */
+.sub-title-box { display: inline-block; padding: 0.5rem 1rem; border: 1px solid #444; border-radius: 4px; font-weight: bold; margin-right: 0.5rem; margin-bottom: 1rem; cursor: pointer; user-select: none; }
+.sub-title-box.active { background: #444; color: #fff; }
+
+/* 리스트 행 */
+.user-box { display: flex; border-top: 1px solid #ccc; padding: 0.75rem 0; font-family: monospace; white-space: nowrap; overflow-x: auto; align-items: center; }
+.user-box.header { border-top: none; background: #f7f7f7; font-weight: bold; border-bottom: 2px solid #444; }
+.user-box .col-action { flex: 0 0 3rem; text-align: center; }
+.user-box .col-id { flex: 2; padding: 0 1rem; }
+.user-box .col-username, .user-box .col-role { flex: 1; padding: 0 1rem; }
+.user-box .col + .col { border-left: 1px dotted #999; }
+
+/* 체크박스 스타일 */
+.col-action input[type="checkbox"] { transform: scale(1.2); cursor: pointer; }
+
+/* 버튼 공통 여백 */
+.bulk-delete, .bulk-reset { margin-top: 1rem; }
+.bulk-delete { background-color: #e74c3c; }
+.bulk-delete:hover { background-color: #c0392b; }
+.bulk-reset { background-color: #e74c3c; }
+.bulk-reset:hover { background-color: #c0392b; }
+</style>
+<script>
+function toggleSection(sec) {
+  ['users','products','reports'].forEach(id => {
+    document.getElementById(id + '-section').style.display = (sec===id ? 'block' : 'none');
+    document.getElementById('btn-' + id).classList.toggle('active', sec===id);
+  });
+}
+window.addEventListener('DOMContentLoaded', () => toggleSection('users'));
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="user-list-card">
+  <div class="card-body">
+    <!-- 제목 버튼 -->
+    <div id="btn-users" class="sub-title-box" onclick="toggleSection('users')">사용자 목록 ({{ users|length }})</div>
+    <div id="btn-products" class="sub-title-box" onclick="toggleSection('products')">상품 목록 ({{ products|length }})</div>
+    <div id="btn-reports" class="sub-title-box" onclick="toggleSection('reports')">신고 내역 ({{ reports|length }})</div>
+
+    <!-- 사용자 목록 섹션 -->
+    <div id="users-section">
+      <form method="POST" action="{{ url_for('bulk_delete_users') }}">
+        <div class="user-box header">
+          <div class="col-action"><input type="checkbox" onclick="for(const c of this.form.querySelectorAll('.row-check:not(:disabled)')) c.checked=this.checked"></div>
+          <div class="col-id">User ID (UUID)</div>
+          <div class="col-username">Username</div>
+          <div class="col-role">Role</div>
+        </div>
+        {% for u in users %}
+        <div class="user-box">
+          <div class="col-action"><input type="checkbox" name="user_ids" value="{{ u.id }}" class="row-check" {% if u.role=='admin' %}disabled{% endif %}></div>
+          <div class="col-id">{{ u.id }}</div>
+          <div class="col-username">{{ u.username }}</div>
+          <div class="col-role">{{ u.role }}</div>
+        </div>
+        {% endfor %}
+        <button type="submit" class="bulk-delete">선택 삭제</button>
+      </form>
+    </div>
+
+    <!-- 상품 목록 섹션 -->
+    <div id="products-section" style="display:none;">
+      <form method="POST" action="{{ url_for('bulk_delete_products') }}">
+        <div class="user-box header">
+          <div class="col-action"><input type="checkbox" onclick="for(const c of this.form.querySelectorAll('.row-check')) c.checked=this.checked"></div>
+          <div class="col-id">Product ID</div>
+          <div class="col-username">Title</div>
+          <div class="col-role">Seller</div>
+        </div>
+        {% for p in products %}
+        <div class="user-box">
+          <div class="col-action"><input type="checkbox" name="product_ids" value="{{ p.id }}" class="row-check"></div>
+          <div class="col-id">{{ p.id }}</div>
+          <div class="col-username">{{ p.title }}</div>
+          <div class="col-role">{{ p.seller_username }}</div>
+        </div>
+        {% endfor %}
+        <button type="submit" class="bulk-delete">선택 삭제</button>
+      </form>
+    </div>
+
+    <!-- 신고 내역 섹션 -->
+    <div id="reports-section" style="display:none;">
+      <div class="user-box header">
+        <div class="col-id">Target</div>
+        <div class="col-username">Type</div>
+        <div class="col-role">Count</div>
+      </div>
+      {% for rep in reports %}
+      <div class="user-box">
+        <div class="col-id">{{ rep.target_name }}</div>
+        <div class="col-username">{{ rep.target_type }}</div>
+        <div class="col-role">{{ rep.count }}</div>
+      </div>
+      {% endfor %}
+      <form method="POST" action="{{ url_for('reset_reports') }}" onsubmit="return confirm('모든 신고 내역을 초기화하시겠습니까?');">
+        <button type="submit" class="bulk-reset">신고 초기화</button>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

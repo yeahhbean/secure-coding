@@ -1,10 +1,14 @@
+<!-- templates/base.html -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <title>{% block title %}My Market{% endblock %}</title>
+
   <!-- Socket.IO 클라이언트 라이브러리 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
+  <!-- 공통 스타일 -->
   <style>
     /* Notion 스타일 미니멀 디자인 */
     body {
@@ -84,6 +88,9 @@
       background-color: #fafafa;
     }
   </style>
+
+  <!-- 페이지별 추가 스타일/스크립트 -->
+  {% block head %}{% endblock %}
 </head>
 <body>
   <nav>
@@ -91,12 +98,17 @@
       <a href="{{ url_for('dashboard') }}">대시보드</a>
       <a href="{{ url_for('profile') }}">프로필</a>
       <a href="{{ url_for('report') }}">신고하기</a>
+      {% if current_user and current_user.role == 'admin' %}
+        <a href="{{ url_for('admin') }}">관리자 페이지</a>
+      {% endif %}
+      <a href="{{ url_for('chat_list') }}">내 채팅</a>
       <a href="{{ url_for('logout') }}">로그아웃</a>
     {% else %}
       <a href="{{ url_for('login') }}">로그인</a>
       <a href="{{ url_for('register') }}">회원가입</a>
     {% endif %}
   </nav>
+
   <div class="container">
     {% with messages = get_flashed_messages() %}
       {% if messages %}
@@ -107,6 +119,7 @@
         </ul>
       {% endif %}
     {% endwith %}
+
     {% block content %}{% endblock %}
   </div>
 </body>

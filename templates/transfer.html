@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>유저 간 송금</h2>
+<form method="post">
+  <label>받는 사람:
+    <select name="to_user">
+      {% for u in users %}
+        <option value="{{ u.id }}">{{ u.username }}</option>
+      {% endfor %}
+    </select>
+  </label><br>
+  <label>금액: <input name="amount" type="number" step="0.01"></label><br>
+  <button>송금</button>
+</form>
+{% endblock %}
