@@ -1,0 +1,9 @@
+Flask==2.2.5
+Flask-SocketIO==5.3.2
+python-engineio==4.3.3
+python-socketio==5.7.2
+Werkzeug==2.3.4
+Jinja2==3.1.2
+Flask-WTF==1.1.1
+bleach==6.0.0
+Flask-Limiter==2.14.0
