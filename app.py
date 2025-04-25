@@ -243,14 +243,25 @@ def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     db = get_db()
-    cursor = db.cursor()
-    # 현재 사용자 조회
-    cursor.execute("SELECT * FROM user WHERE id = ?", (session['user_id'],))
-    current_user = cursor.fetchone()
-    # 모든 상품 조회
-    cursor.execute("SELECT * FROM product")
-    all_products = cursor.fetchall()
-    return render_template('dashboard.html', products=all_products, user=current_user)
+
+    # 검색어 파라미터 읽기
+    search = request.args.get('q', '').strip()
+
+    if search:
+        # 제목이 정확히 일치하는 상품만 조회
+        products = db.execute(
+            "SELECT * FROM product WHERE title = ?", (search,)
+        ).fetchall()
+    else:
+        products = db.execute("SELECT * FROM product").fetchall()
+
+    user = db.execute("SELECT * FROM user WHERE id = ?", (session['user_id'],)).fetchone()
+    return render_template('dashboard.html',
+                           products=products,
+                           user=user,
+                           search_query=search)
+
+
 
 # 프로필 페이지: bio 업데이트 가능
 @app.route('/profile', methods=['GET', 'POST'])
@@ -403,6 +414,27 @@ def view_product(product_id):
     cursor.execute("SELECT * FROM user WHERE id = ?", (product['seller_id'],))
     seller = cursor.fetchone()
     return render_template('view_product.html', product=product, seller=seller)
+
+# 판매자 본인 상품 삭제
+@app.route('/product/<product_id>/delete', methods=['POST'])
+def delete_my_product(product_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    db = get_db()
+    # 해당 상품이 존재하는지
+    prod = db.execute("SELECT seller_id FROM product WHERE id=?", (product_id,)).fetchone()
+    if not prod:
+        flash('상품을 찾을 수 없습니다.')
+        return redirect(url_for('dashboard'))
+    # 본인이 올린 상품인지 검사
+    if prod['seller_id'] != session['user_id']:
+        flash('삭제 권한이 없습니다.')
+        return redirect(url_for('view_product', product_id=product_id))
+    # 삭제 실행
+    db.execute("DELETE FROM product WHERE id=?", (product_id,))
+    db.commit()
+    flash('상품이 삭제되었습니다.')
+    return redirect(url_for('dashboard'))
 
 # 신고하기
 @app.route('/report', methods=['GET', 'POST'])
