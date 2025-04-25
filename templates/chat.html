@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import 'macros.html' as macros %}
 {% block title %}1:1 채팅 – {{ other_username }}{% endblock %}
 
 {% block head %}
@@ -24,6 +25,7 @@
     cursor: pointer;
   }
   #messages {
+    list-style: none;
     height: 300px;
     overflow-y: auto;
     border: 1px solid #e0e0e0;
@@ -32,62 +34,62 @@
     background: #fafafa;
     margin-bottom: 10px;
   }
-  /* 입력창과 버튼을 가로 배치 */
   #chat-form { display: flex; gap: 10px; margin-bottom: 10px; }
-  #msg-input { flex: 1; }
+  #msg-input { flex: 1; padding:8px; border:1px solid #ccc; border-radius:4px; }
   #chat-form button { flex: 0 0 auto; width: 80px; }
   .leave-btn { background-color: #e74c3c; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
   .leave-btn:hover { background-color: #c0392b; }
 </style>
 <script>
-  var socket;
-  document.addEventListener('DOMContentLoaded', function() {
-    socket = io();
-    socket.emit('join', {room: '{{ room }}'});
-    // 과거 대화 렌더링
-    {% for m in history %}
-      addMessage("{{ m.sender_name }}: {{ m.msg }}");
-    {% endfor %}
-    // 새 메시지 수신 (서버 send uses default 'message' event)
-    socket.on('message', function(data) {
-      addMessage(data.from_name + ': ' + data.msg);
-    });
+  var socket = io();
+  socket.on('connect', function(){
+    socket.emit('join', { room: '{{ room }}' });
   });
 
-  function addMessage(text) {
-    var msgBox = document.getElementById('messages');
-    var entry = document.createElement('div');
-    entry.textContent = text;
-    msgBox.appendChild(entry);
-    msgBox.scrollTop = msgBox.scrollHeight;
-  }
+  socket.on('message', function(data){
+    var li = document.createElement('li');
+    li.textContent = data.from_name + ": " + data.msg;
+    document.getElementById('messages').appendChild(li);
+    document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+  });
 
   function sendMessage() {
     var input = document.getElementById('msg-input');
-    var msg = input.value.trim();
-    if (!msg) return;
-    socket.emit('private_message', {room: '{{ room }}', from: '{{ current_user.id }}', from_name: '{{ current_user.username }}', msg: msg});
+    var m = input.value.trim();
+    if (!m) return;
+    socket.emit('private_message', {
+      room: '{{ room }}',
+      from: '{{ current_user.id }}',
+      from_name: '{{ current_user.username }}',
+      msg: m
+    });
     input.value = '';
-  }
-
-  function leaveChat() {
-    fetch('{{ url_for("leave_chat", room_id=room) }}', {method: 'POST', credentials: 'same-origin'})
-      .then(function() { window.location.href = '{{ url_for("chat_list") }}'; });
-  }
-
-  function dismissNotification() {
-    document.getElementById('notification').style.display = 'none';
   }
 </script>
 {% endblock %}
 
 {% block content %}
-<div id="notification"><span></span><button onclick="dismissNotification()">×</button></div>
+<div id="notification"><span></span><button onclick="document.getElementById('notification').style.display='none'">×</button></div>
 <h2>1:1 채팅 – {{ other_username }}</h2>
-<div id="messages"></div>
+
+<ul id="messages">
+  {% if history %}
+    {% for m in history %}
+      <li>{{ m.sender_name }}: {{ m.msg }}</li>
+    {% endfor %}
+  {% else %}
+    <li>아직 대화 내역이 없습니다.</li>
+  {% endif %}
+</ul>
+
 <form id="chat-form" onsubmit="sendMessage(); return false;">
   <input id="msg-input" autocomplete="off" placeholder="메시지를 입력하세요" />
   <button type="submit">전송</button>
 </form>
-<button class="leave-btn" onclick="leaveChat()">대화 나가기</button>
+
+<!-- 대화 나가기: CSRF 포함된 폼으로 처리 -->
+<form method="POST" action="{{ url_for('leave_chat', room_id=room) }}" onsubmit="return confirm('정말 이 채팅방과 대화 내역을 모두 삭제하시겠습니까?');">
+  {{ macros.csrf_field() }}
+  <button type="submit" class="leave-btn">대화 나가기</button>
+</form>
 {% endblock %}

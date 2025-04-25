@@ -1,8 +1,10 @@
 {% extends "base.html" %}
+{% import 'macros.html' as macros %}
 {% block title %}상품 등록{% endblock %}
 {% block content %}
 <h2>상품 등록</h2>
 <form method="post">
+  {{ macros.csrf_field() }}
   <label>제목</label>
   <input type="text" name="title" required>
 

@@ -1,4 +1,5 @@
 <!-- templates/base.html -->
+{% import 'macros.html' as macros %}
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -59,14 +60,8 @@
     button:hover {
       background-color: #005BB5;
     }
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-    li {
-      padding: 10px;
-      border-bottom: 1px solid #e0e0e0;
-    }
+    ul { list-style: none; padding: 0; }
+    li { padding: 10px; border-bottom: 1px solid #e0e0e0; }
     .flash {
       background-color: #FFECB3;
       padding: 10px;
@@ -75,9 +70,7 @@
       margin-bottom: 20px;
     }
     /* 채팅 영역 스타일 */
-    #chat {
-      margin-top: 40px;
-    }
+    #chat { margin-top: 40px; }
     #messages {
       height: 200px;
       overflow-y: auto;
@@ -122,5 +115,17 @@
 
     {% block content %}{% endblock %}
   </div>
+
+  <!-- CSRF 토큰 자동 삽입 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){
+      document.querySelectorAll('form').forEach(form => {
+        if (form.method.toLowerCase() !== 'post') return;
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `{{ macros.csrf_field()|replace("\n","") }}`;
+        form.prepend(wrapper.firstChild);
+      });
+    });
+    </script>    
 </body>
 </html>

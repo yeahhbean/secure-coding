@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import 'macros.html' as macros %}
 {% block title %}프로필 관리{% endblock %}
 {% block head %}
 <style>
@@ -21,6 +22,7 @@
   <div class="card-body">
     <h3>프로필 관리</h3>
     <form method="POST" action="{{ url_for('profile') }}">
+      {{ macros.csrf_field() }}
       <div class="form-group">
         <label>소개글:</label>
         <textarea name="bio">{{ current_user.bio or '' }}</textarea>
@@ -35,6 +37,7 @@
     <div id="pwd-section">
       <h3>비밀번호 변경</h3>
       <form method="POST" action="{{ url_for('change_password') }}">
+        {{ macros.csrf_field() }}
         <div class="form-group">
           <label>현재 비밀번호</label>
           <input type="password" name="old_password" required>
